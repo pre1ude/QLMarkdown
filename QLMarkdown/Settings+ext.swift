@@ -174,6 +174,7 @@ extension Settings {
         defaults.set(highlightExtension, forKey: Self.CodingKeys.hightlightExtension.rawValue)
         defaults.set(inlineImageExtension, forKey: Self.CodingKeys.inlineImageExtension.rawValue)
         defaults.set(mathExtension.rawValue, forKey: Self.CodingKeys.mathExtension.rawValue)
+        defaults.set(mathRenderer.rawValue, forKey: Self.CodingKeys.mathRenderer.rawValue)
         defaults.set(mermaidExtension.rawValue, forKey: Self.CodingKeys.mermaidExtension.rawValue)
         defaults.set(mermaidRenderer.rawValue, forKey: Self.CodingKeys.mermaidRenderer.rawValue)
         defaults.set(subExtension, forKey: Self.CodingKeys.subExtension.rawValue)

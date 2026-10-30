@@ -20,6 +20,7 @@ func resource(_ name: String) throws -> String {
 
 let pele = try resource("pele.global.js.gz")
 let renderer = try resource("mermaid-renderer.js")
+let mathRenderer = try resource("math-renderer.js")
 let icons = try resource("pele-icons.js")
 let temml = try resource("temml.min.js.gz")
 let mathCSS = try resource("Temml-Local.css")
@@ -68,8 +69,10 @@ class Check: NSObject, WKNavigationDelegate {
         catch (error) { window.expectedPeleError = error.message; }
         try { pele.render(document.querySelector('#unsupported').textContent); }
         catch (error) { window.expectedUnsupportedError = error.message; }
-        </script><script nonce="test">\(icons)\n\(renderer)
-        renderMermaidDiagrams(\(options)).then(() => { window.finished = true; });
+        </script><script nonce="test">const qlmarkdownMathOptions = \(options);
+        \(mathRenderer)
+        \(icons)\n\(renderer)
+        renderMermaidDiagrams().then(() => { window.finished = true; });
         </script></body></html>
         """
         web.navigationDelegate = self

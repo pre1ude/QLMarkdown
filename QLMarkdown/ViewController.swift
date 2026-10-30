@@ -159,6 +159,13 @@ class ViewController: NSViewController {
         }
     }
 
+    var mathRenderer = Settings.factorySettings.mathRenderer {
+        didSet {
+            guard oldValue != mathRenderer else { return }
+            isDirty = true
+        }
+    }
+
     @objc dynamic var mermaidExtension: Bool = Settings.factorySettings.mermaidExtension != .disabled {
         didSet {
             guard oldValue != mermaidExtension else { return }
@@ -735,6 +742,10 @@ class ViewController: NSViewController {
     }
     
     @IBAction func handleMathPopup(_ sender: NSPopUpButton) {
+        if sender.selectedTag() == 3 || sender.selectedTag() == 4 {
+            self.mathRenderer = sender.selectedTag() == 3 ? .temml : .mathjax
+            return
+        }
         handleJSExtensionPopup(sender, extension: &self.mathExtension, extensionEmbedded: &self.mathExtensionEmbed,)
     }
     
@@ -1381,6 +1392,7 @@ document.addEventListener('scroll', function(e) {
         
         self.mathExtension = settings.mathExtension != .disabled
         self.mathExtensionEmbed = settings.mathExtension == .embed
+        self.mathRenderer = settings.mathRenderer
         
         self.mermaidExtension = settings.mermaidExtension != .disabled
         self.mermaidExtensionEmbed = settings.mermaidExtension == .embed
@@ -1453,6 +1465,7 @@ document.addEventListener('scroll', function(e) {
         settings.yamlExtension = self.yamlExtension ? ( self.yamlExtensionAll ? .allFiles : .onlyRmd) : .disabled
         
         settings.mathExtension = self.mathExtension ? (self.mathExtensionEmbed ? .embed : .link) : .disabled
+        settings.mathRenderer = self.mathRenderer
         settings.mermaidExtension = self.mermaidExtension ? (self.mermaidExtensionEmbed ? .embed : .link) : .disabled
         settings.mermaidRenderer = self.mermaidRenderer
         settings.mentionExtension = self.mentionExtension
@@ -1575,12 +1588,17 @@ extension ViewController: NSMenuItemValidation {
                 menuItem.state = self.emojiExtension ? .off : .on
             
             case "mnu_math":
-                menuItem.title = String.localizedStringWithFormat(NSLocalizedString("Math library %@", comment: "Math library menu title"), Settings.mathJaxVersion)
+                menuItem.title = "Temml \(Settings.temmlVersion) / MathJax \(Settings.mathJaxVersion)"
                 return false
+            case "mnu_math_temml":
+                menuItem.state = mathRenderer == .temml ? .on : .off
+            case "mnu_math_mathjax":
+                menuItem.state = mathRenderer == .mathjax ? .on : .off
             case "mnu_math_link":
                 menuItem.state = mathExtension && !mathExtensionEmbed ? .on : .off
             case "mnu_math_embed":
-                return Self.updateJSExtensionEmbedMenuItem(menuItem, state: mathExtension && mathExtensionEmbed, fileUrl: Settings.shared.mathJaxFileUrl, byteFormatter: byteFormatter)
+                let fileUrl = mathRenderer == .temml ? Settings.shared.temmlFileUrl : Settings.shared.mathJaxFileUrl
+                return Self.updateJSExtensionEmbedMenuItem(menuItem, state: mathExtension && mathExtensionEmbed, fileUrl: fileUrl, byteFormatter: byteFormatter)
             case "mnu_math_disabled":
                 menuItem.state = mathExtension ? .off : .on
                 

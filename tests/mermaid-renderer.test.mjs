@@ -11,10 +11,12 @@ const peleCode = gunzipSync(resource('pele.global.js.gz')).toString();
 const temmlCode = gunzipSync(resource('temml.min.js.gz')).toString();
 const icons = resource('pele-icons.js').toString();
 const renderer = resource('mermaid-renderer.js').toString();
+const mathRenderer = resource('math-renderer.js').toString();
 
-function startRender(sources, { pele = true, failPeleRender = false, failMathLoad = false, delayMathLoad = false, embedded = false } = {}) {
+function startRender(sources, { pele = true, failPeleRender = false, failMathLoad = false, delayMathLoad = false, embedded = false, bodySources = [] } = {}) {
     const nodes = sources.map(textContent => ({ textContent, dataset: {}, style: {}, clientWidth: 800 }));
     const scripts = [];
+    const bodyNodes = bodySources.map(textContent => ({ textContent, tagName: 'SPAN', dataset: {} }));
     let finishMathLoad;
     const context = vm.createContext({
         console, URL,
@@ -23,7 +25,7 @@ function startRender(sources, { pele = true, failPeleRender = false, failMathLoa
             compatMode: 'CSS1Compat',
             fonts: { load: async () => [] },
             body: { appendChild() {} },
-            querySelectorAll: () => nodes,
+            querySelectorAll: selector => selector === '.mermaid' ? nodes : bodyNodes,
             createElement: tag => ({
                 tagName: tag, style: {}, remove() {},
                 querySelector() {
@@ -53,13 +55,14 @@ function startRender(sources, { pele = true, failPeleRender = false, failMathLoa
     context.window = context;
     if (pele) vm.runInContext(peleCode, context);
     if (failPeleRender) context.pele = { ...context.pele, render() { throw new Error('Layout failed'); } };
-    vm.runInContext(icons + '\n' + renderer, context);
-    const finished = context.renderMermaidDiagrams({
+    context.qlmarkdownMathOptions = {
         nonce: 'test-nonce',
         mathURL: 'https://example.com/temml.js', mathIntegrity: 'sha384-math', mathCSS: '',
         mathCode: embedded ? temmlCode : undefined
-    });
-    return { nodes, scripts, finished, finishMathLoad: () => finishMathLoad() };
+    };
+    vm.runInContext(mathRenderer + '\n' + icons + '\n' + renderer, context);
+    const finished = Promise.all([context.renderTemmlMath(), context.renderMermaidDiagrams()]);
+    return { nodes, bodyNodes, scripts, finished, finishMathLoad: () => finishMathLoad() };
 }
 
 async function render(sources, options) {
@@ -240,4 +243,18 @@ test('enabling images still applies Pele URL filtering', async () => {
     assert.doesNotMatch(nodes[0].innerHTML, /<image/);
     assert.doesNotMatch(nodes[1].innerHTML, /<image/);
     assert.doesNotMatch(nodes[2].innerHTML, /function Object/);
+});
+
+
+test('body and Pele share a failed Temml load without loading MathJax', async () => {
+    const { nodes, bodyNodes, scripts } = await render([
+        'graph LR\nA["$$x^2$$"]', 'graph LR\nB-->C'
+    ], { failMathLoad: true, bodySources: ['$x^2$', '$y^2$'] });
+    assert.equal(scripts.length, 1);
+    assert.equal(nodes[0].dataset.renderer, 'error');
+    assert.equal(nodes[1].dataset.renderer, 'pele');
+    for (const node of bodyNodes) {
+        assert.equal(node.dataset.mathRenderer, 'error');
+        assert.match(node.textContent, /^\$[xy]\^2\$\nUnable to render formula: Unable to load Temml$/);
+    }
 });

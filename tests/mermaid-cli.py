@@ -83,7 +83,7 @@ with tempfile.TemporaryDirectory() as directory:
                 str(cli), '--app', str(app), '--mermaid', mode, '--mermaid-renderer', 'pele',
                 '--raw-html', 'on', '--math', 'off', '--about', 'off', str(markdown)
             ], text=True)
-            payload = html.split('renderMermaidDiagrams(', 2)[2]
+            payload = html.split('const qlmarkdownMathOptions = ', 1)[1]
             options, end = json.JSONDecoder().raw_decode(payload)
             assert '<' not in payload[:end], 'Embedded data must not terminate the script element'
             math_keys = {key for key in options if key.startswith('math')}
