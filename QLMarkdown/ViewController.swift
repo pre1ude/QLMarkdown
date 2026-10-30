@@ -175,6 +175,13 @@ class ViewController: NSViewController {
         }
     }
 
+    var mermaidRenderer = Settings.factorySettings.mermaidRenderer {
+        didSet {
+            guard oldValue != mermaidRenderer else { return }
+            isDirty = true
+        }
+    }
+
     @objc dynamic var highlightExtension: Bool = Settings.factorySettings.highlightExtension {
         didSet {
             guard oldValue != highlightExtension else { return }
@@ -742,6 +749,10 @@ class ViewController: NSViewController {
     }
     
     @IBAction func handleMermaidPopup(_ sender: NSPopUpButton) {
+        if sender.selectedTag() == 3 || sender.selectedTag() == 4 {
+            self.mermaidRenderer = sender.selectedTag() == 3 ? .pele : .mermaid
+            return
+        }
         handleJSExtensionPopup(sender, extension: &self.mermaidExtension, extensionEmbedded: &self.mermaidExtensionEmbed)
     }
     
@@ -1373,6 +1384,7 @@ document.addEventListener('scroll', function(e) {
         
         self.mermaidExtension = settings.mermaidExtension != .disabled
         self.mermaidExtensionEmbed = settings.mermaidExtension == .embed
+        self.mermaidRenderer = settings.mermaidRenderer
         
         self.mentionExtension = settings.mentionExtension
         self.wikilinkExtension = settings.wikilinkExtension
@@ -1442,6 +1454,7 @@ document.addEventListener('scroll', function(e) {
         
         settings.mathExtension = self.mathExtension ? (self.mathExtensionEmbed ? .embed : .link) : .disabled
         settings.mermaidExtension = self.mermaidExtension ? (self.mermaidExtensionEmbed ? .embed : .link) : .disabled
+        settings.mermaidRenderer = self.mermaidRenderer
         settings.mentionExtension = self.mentionExtension
         settings.wikilinkExtension = self.wikilinkExtension
         settings.hashtagExtension = self.hashtagExtension
@@ -1572,12 +1585,24 @@ extension ViewController: NSMenuItemValidation {
                 menuItem.state = mathExtension ? .off : .on
                 
             case "mnu_mermaid":
-                menuItem.title = String.localizedStringWithFormat(NSLocalizedString("Mermaid library %@", comment: "Mermaid library menu title"), Settings.mermaidVersion)
+                menuItem.title = "Pele \(Settings.peleVersion) / Mermaid \(Settings.mermaidVersion)"
                 return false
+            case "mnu_mermaid_pele":
+                menuItem.title = NSLocalizedString("Pele", comment: "Diagram renderer menu title")
+                menuItem.state = mermaidRenderer == .pele ? .on : .off
+            case "mnu_mermaid_native":
+                menuItem.title = NSLocalizedString("Native Mermaid", comment: "Diagram renderer menu title")
+                menuItem.state = mermaidRenderer == .mermaid ? .on : .off
             case "mnu_mermaid_link":
                 menuItem.state = mermaidExtension && !mermaidExtensionEmbed ? .on : .off
             case "mnu_mermaid_embed":
-                return Self.updateJSExtensionEmbedMenuItem(menuItem, state: mermaidExtension && mermaidExtensionEmbed, fileUrl: Settings.shared.mermaidFileUrl, byteFormatter: byteFormatter)
+                let fileUrl = mermaidRenderer == .pele ? Settings.shared.peleFileUrl : Settings.shared.mermaidFileUrl
+                let available = Self.updateJSExtensionEmbedMenuItem(menuItem, state: mermaidExtension && mermaidExtensionEmbed, fileUrl: fileUrl, byteFormatter: byteFormatter)
+                if mermaidRenderer == .pele {
+                    menuItem.title = NSLocalizedString("Embedded", comment: "Embedded diagram libraries")
+                    return available
+                }
+                return available
             case "mnu_mermaid_disabled":
                 menuItem.state = mermaidExtension ? .off : .on
                 

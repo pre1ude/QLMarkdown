@@ -37,6 +37,10 @@ enum libraryArgumentEnum: String, ExpressibleByArgument {
     }
 }
 
+extension MermaidRenderer: ExpressibleByArgument {
+    static var allValueStrings: [String] { return ["pele", "mermaid"] }
+}
+
 enum AppearanceEnum: String, ExpressibleByArgument {
     case light, dark, auto
     
@@ -173,8 +177,11 @@ struct ExtensionsOptions: ParsableArguments {
     @Option(help: ArgumentHelp("Format the mathematical expressions with MathJax. You can specify if link or embed the MathJax.js library.", valueName: "off|link|embed"))
     var math: libraryArgumentEnum? = nil
     
-    @Option(help: ArgumentHelp("Format the mermaid diagrams. You can specify if link or the Mermaid.js library.", valueName: "off|link|embed"))
+    @Option(help: ArgumentHelp("Format Mermaid diagrams. Link or embed the diagram libraries.", valueName: "off|link|embed"))
     var mermaid: libraryArgumentEnum? = nil
+
+    @Option(help: ArgumentHelp("Use Pele (default) or native Mermaid.", valueName: "pele|mermaid"))
+    var mermaidRenderer: MermaidRenderer? = nil
     
     @Option(help: ArgumentHelp("Enable table extension.", valueName: "on|off"))
     var table: BoolArgumentEnum? = nil
@@ -373,6 +380,9 @@ struct QLMarkdownCLI: ParsableCommand {
                 settings.mermaidExtension = .link
             }
         }
+        if let renderer = extensions.mermaidRenderer {
+            settings.mermaidRenderer = renderer
+        }
         if let o = extensions.table {
             settings.tableExtension = o == .on
         }
@@ -471,14 +481,17 @@ struct QLMarkdownCLI: ParsableCommand {
             print("    --math: linked (\(Settings.mathJaxVersion)) from \(Settings.mathJaxWebUrl)")
         }
         
+        let diagramVersion = settings.mermaidRenderer == .pele ? Settings.peleVersion : Settings.mermaidVersion
+        let diagramURL = settings.mermaidRenderer == .pele ? Settings.peleWebUrl : Settings.mermaidWebUrl
         switch settings.mermaidExtension {
         case .disabled:
             print("    --mermaid: off")
         case .embed:
-            print("    --mermaid: embedded (\(Settings.mermaidVersion))")
+            print("    --mermaid: embedded (\(diagramVersion))")
         case .link:
-            print("    --mermaid: linked (\(Settings.mermaidVersion)) from \(Settings.mermaidWebUrl)")
+            print("    --mermaid: linked (\(diagramVersion)) from \(diagramURL)")
         }
+        print("    --mermaid-renderer: \(settings.mermaidRenderer.rawValue)")
         
         print("    --table: \(settings.tableExtension ? "on" : "off")")
         print("    --tasklist: \(settings.taskListExtension ? "on" : "off")")

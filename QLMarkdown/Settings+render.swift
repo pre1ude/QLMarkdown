@@ -662,12 +662,14 @@ table.debug td {
         html_debug += "</td></tr>\n"
 
         html_debug += "<tr><td>mermaid extension</td><td>"
+        html_debug += "renderer: \(self.mermaidRenderer.rawValue); "
         switch self.mermaidExtension {
         case .disabled:
             html_debug += "off"
         case .embed:
             html_debug += "embedded"
-            if let file = self.mermaidFileUrl {
+            let fileUrl = self.mermaidRenderer == .pele ? self.peleFileUrl : self.mermaidFileUrl
+            if let file = fileUrl {
                 html_debug += " (\(file.path)"
                 
                 if file.isFileURL && !FileManager.default.fileExists(atPath: file.path) {
@@ -675,10 +677,11 @@ table.debug td {
                 }
                 html_debug += ")"
             } else {
-                html_debug += " (fallback: \(Self.mermaidWebUrl.absoluteString))"
+                html_debug += self.mermaidRenderer == .pele ? " (Pele unavailable)" : " (fallback: \(Self.mermaidWebUrl.absoluteString))"
             }
         case .link:
-            html_debug += "linked (\(Self.mermaidWebUrl.absoluteString))"
+            let url = self.mermaidRenderer == .pele ? Self.peleWebUrl : Self.mermaidWebUrl
+            html_debug += "linked (\(url.absoluteString))"
         }
         html_debug += "</td></tr>\n"
 
@@ -988,8 +991,11 @@ MathJax = {
 
         // Mermaid diagrams support
         if !self.renderAsCode, self.mermaidExtension != .disabled, processedBody.contains("class=\"mermaid\"") {
-            
-            // Inject mermaid.min.js
+            if self.mermaidRenderer == .pele {
+                // Keep the diagram theme when custom CSS replaces default.css; custom rules still win.
+                css_doc += formatCSS(self.getBundleContents(forResource: "pele", ofType: "css"))
+            }
+            // Inject the selected diagram renderer.
             s_footer += self.getMermaidScriptCode(nonce: nonce)
         }
 
@@ -1309,7 +1315,7 @@ MathJax = {
 
         let range = NSRange(html.startIndex..., in: html)
 
-        // Replace with <div class="mermaid">$1</div>, but we need to decode HTML entities in the content
+        // Keep entities escaped so the browser exposes the original source through textContent.
         let result = regex.stringByReplacingMatches(
             in: html,
             options: [],

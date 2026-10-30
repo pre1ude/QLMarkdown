@@ -1,5 +1,16 @@
 # Changelog
 
+### Unreleased
+
+New Features:
+- Use Pele as the default Mermaid diagram renderer, with an option to select native Mermaid in the app or CLI.
+- Render Pele diagram formulas with Temml and provide a bundled subset of icons.
+- Support linked and embedded libraries for both diagram renderers. Pele errors are displayed without automatically switching to Mermaid.
+
+Bugfix:
+- Preserve HTML-like text and escaped characters in Mermaid code blocks when syntax highlighting is enabled.
+
+
 ### 1.5.7 (59)
 
 Bugfix:

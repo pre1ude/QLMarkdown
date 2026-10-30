@@ -1351,6 +1351,9 @@
                                                                                     <menuItem title="Mermaid Library" enabled="NO" identifier="mnu_mermaid" id="cCi-Mu-ec5">
                                                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                                                     </menuItem>
+                                                                                    <menuItem title="Pele" tag="3" identifier="mnu_mermaid_pele" indentationLevel="1" id="PLe-rd-001"/>
+                                                                                    <menuItem title="Native Mermaid" tag="4" identifier="mnu_mermaid_native" indentationLevel="1" id="MRm-rd-001"/>
+                                                                                    <menuItem isSeparatorItem="YES" id="SEP-rd-001"/>
                                                                                     <menuItem title="Linked from web" tag="2" identifier="mnu_mermaid_link" indentationLevel="1" id="r4o-4n-lvz"/>
                                                                                     <menuItem title="Embedded" tag="1" identifier="mnu_mermaid_embed" indentationLevel="1" id="ydg-Fj-IJb"/>
                                                                                     <menuItem isSeparatorItem="YES" id="KJ9-Cr-MFQ"/>
